@@ -2,7 +2,11 @@
 This code is purely made for education and research purposes. (And also because I have too much free time.)
 # First time setup
 First step is to have python already installed in your computer.\
-Second step is to install all required dependencies :-
+Second step is to clone the repository into your directory.
+```bash
+git clone https://github.com/SenyxLois/KeyboxCheckerPython
+```
+Third step is to install all required dependencies :-
 
 > [!TIP]
 > Python virtual enviroment is highly recommended!
