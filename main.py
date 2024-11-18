@@ -23,7 +23,6 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, ec
 init(autoreset=True)
 
-
 async def load_from_url():
     url = "https://android.googleapis.com/attestation/status"
 
@@ -169,12 +168,18 @@ async def keybox_check_cli(keybox_path):
         keychain_status = (f"{Fore.RED}Invalid.")
 
     # Root Certificate Validation
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    google_pem = os.path.join(script_dir, 'lib', 'pem', 'google.pem')
+    aosp_ec_pem = os.path.join(script_dir, 'lib', 'pem', 'aosp_ec.pem')
+    aosp_rsa_pem = os.path.join(script_dir, 'lib', 'pem', 'aosp_rsa.pem')
+    knox_pem = os.path.join(script_dir, 'lib', 'pem', 'knox.pem')
+
     root_certificate = x509.load_pem_x509_certificate(pem_certificates[-1].encode(), default_backend())
     root_public_key = root_certificate.public_key()
-    google_public_key = load_public_key_from_file("lib/pem/google.pem")
-    aosp_ec_public_key = load_public_key_from_file("lib/pem/aosp_ec.pem")
-    aosp_rsa_public_key = load_public_key_from_file("lib/pem/aosp_rsa.pem")
-    knox_public_key = load_public_key_from_file("lib/pem/knox.pem")
+    google_public_key = load_public_key_from_file(google_pem)
+    aosp_ec_public_key = load_public_key_from_file(aosp_ec_pem)
+    aosp_rsa_public_key = load_public_key_from_file(aosp_rsa_pem)
+    knox_public_key = load_public_key_from_file(knox_pem)
     if compare_keys(root_public_key, google_public_key):
         cert_status = (f"{Fore.GREEN}Google Hardware Attestation")
     elif compare_keys(root_public_key, aosp_ec_public_key):
