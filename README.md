@@ -14,8 +14,12 @@ Third step is to install all required dependencies :-
 pip install -r requirements.txt
 
 ```
+> [!WARNING]
+> For termux user, I don't know what with the cryptography and pip on there so please install all the packages using this command :
+```bash
+export RUSTFLAGS=" -C lto=no" && export CARGO_BUILD_TARGET="$(rustc -vV | sed -n 's|host: ||p')" && pip install cryptography aiohttp colorama
+```
 That's it! I mean its a python file.
-
 # Usage
 *Checking a single keybox*
 ```bash
