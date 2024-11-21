@@ -8,13 +8,15 @@
 import asyncio
 import aiohttp
 import re
+import tarfile
+import requests
 import json
 import tempfile
 import time
+import os
 import sys
 import argparse
 from colorama import Fore, Style, init
-import os
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from cryptography import x509
@@ -22,6 +24,81 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, ec
 init(autoreset=True)
+current_version = "v1.2"
+
+# ==== This code is to check update
+
+# because the "v" is important since it look beautiful
+def parse_version(version):
+    return tuple(map(int, (version.lstrip('v').split("."))))
+
+def get_latest_version():
+    url = f"https://api.github.com/repos/SenyxLois/KeyboxCheckerPython/releases/latest"
+    response = requests.get(url)
+    if response.status_code == 200:
+        latest_release = response.json()
+        return latest_release["tag_name"], latest_release["tarball_url"], latest_release["body"]
+    else:
+        raise Exception(f"Failed to fetch latest release: {response.status_code}")
+
+def download_and_replace_files(tarball_url):
+    response = requests.get(tarball_url)
+    if response.status_code == 200:
+        tar_content = response.content
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tar_path = os.path.join(tmpdirname, 'update.tar.gz')
+            with open(tar_path, 'wb') as f:
+                f.write(tar_content)
+            with tarfile.open(tar_path, 'r:gz') as tar_ref:
+                def is_within_directory(directory, target):
+                    abs_directory = os.path.abspath(directory)
+                    abs_target = os.path.abspath(target)
+                    prefix = os.path.commonprefix([abs_directory, abs_target])
+                    return prefix == abs_directory
+
+                def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+                    for member in tar.getmembers():
+                        member_path = os.path.join(path, member.name)
+                        if not is_within_directory(path, member_path):
+                            raise Exception("Attempted Path Traversal in Tar File")
+                    tar.extractall(path, members, numeric_owner=numeric_owner)
+
+                safe_extract(tar_ref, tmpdirname)
+            extracted_dir = os.path.join(tmpdirname, os.listdir(tmpdirname)[0])
+            for root, dirs, files in os.walk(extracted_dir):
+                for file in files:
+                    src_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(src_path, extracted_dir)
+                    dest_path = os.path.join(os.getcwd(), rel_path)
+                    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                    os.replace(src_path, dest_path)
+            print("Update successful. Please restart the application.")
+    else:
+        print("Failed to download the update.")
+
+def check_for_update():
+    repo_url = "https://api.github.com/repos/SenyxLois/KeyboxCheckerPython/releases/latest"
+    response = requests.get(repo_url)
+    if response.status_code == 200:
+        release_info = response.json()
+        latest_version = release_info['tag_name']
+        changelog = release_info['body']
+        if parse_version(latest_version) > parse_version(current_version):
+            print(f"New Version available: {latest_version}")
+            print("Changelog :")
+            print(changelog)
+            update = input("Do you want to update? (y/n): ").strip().lower()
+            if update == "y":
+                print('Updating...')
+                download_and_replace_files(release_info['tarball_url'])
+            else:
+                print("Update canceled.")
+        else:
+            time.sleep(0.02)
+    else:
+        print("Failed to check for updates.")
+
+# ==== very demure lining :3
 
 async def load_from_url():
     url = "https://android.googleapis.com/attestation/status"
@@ -256,7 +333,7 @@ def get_overrall_status(status, keychain_status, cert_status, google_status):
 
 
 if __name__ == "__main__":
-    # Create an argument parser
+    check_for_update()
     parser = argparse.ArgumentParser(description="Keybox Checker")
     parser.add_argument(
         "keybox_path", 
