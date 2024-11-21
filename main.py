@@ -230,8 +230,9 @@ def get_overrall_status(status, keychain_status, cert_status, google_status):
                     return f"{Fore.YELLOW}Valid. (Software signed)"
                 else:
                     print(f"Something happen {status['reason']}")
-            elif cert_status in (f"{Fore.YELLOW}AOSP Software Attestation(EC)", f"{Fore.YELLOW}AOSP Software Attestation(RCA)", f"{Fore.GREEN}Samsung Knox Attestation"):
+            elif cert_status in (f"{Fore.YELLOW}AOSP Software Attestation(EC)", f"{Fore.YELLOW}AOSP Software Attestation(RCA)", f"{Fore.GREEN}Samsung Knox Attestation", f"{Fore.GREEN}Google Hardware Attestation"):
                 cert_status_map = {
+                    f"{Fore.GREEN}Google Hardware Attestation": f"{Fore.GREEN}Valid. (Google Hardware Attestation)",
                     f"{Fore.YELLOW}AOSP Software Attestation(EC)": f"{Fore.YELLOW}Valid. (AOSP Software EC)",
                     f"{Fore.YELLOW}AOSP Software Attestation(RCA)": f"{Fore.YELLOW}Valid. (AOSP Software RCA)",
                     f"{Fore.GREEN}Samsung Knox Attestation": f"{Fore.GREEN}Valid. (How did u get this? / Knox Attestation)"
