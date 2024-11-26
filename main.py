@@ -24,7 +24,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, ec
 init(autoreset=True)
-current_version = "v1.2"
+current_version = "v1.3"
 
 # ==== This code is to check update
 
@@ -275,9 +275,17 @@ async def keybox_check_cli(keybox_path):
         print("Failed to fetch Google's revoked keybox list")
         with open("res/json/status.json", 'r', encoding='utf-8') as file:
             status_json = json.load(file)
-            reply += "\nUsing local revoked keybox list"
-    status = status_json['entries'].get(serial_number_string, None)
-    if status is None:
+            print("Using local revoked list.. (DO NOT TRUST 100%)")
+
+    status = None
+    for i in range(pem_number):
+        certificate = x509.load_pem_x509_certificate(pem_certificates[i].encode(), default_backend())
+        serial_number = certificate.serial_number
+        serial_number_string = hex(serial_number)[2:].lower()
+        if status_json['entries'].get(serial_number_string, None):
+            status = status_json['entries'][serial_number_string]
+            break
+    if not status:
         google_status = "null"
     else:
         google_status = (f"{status['reason']}")
