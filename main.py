@@ -24,7 +24,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, ec
 init(autoreset=True)
-current_version = "v1.3"
+current_version = "v1.4"
 
 # ==== This code is to check update
 
@@ -291,6 +291,9 @@ async def keybox_check_cli(keybox_path):
         google_status = (f"{status['reason']}")
 
     overrall_status = get_overrall_status(status, keychain_status, cert_status, google_status)
+    oid_values = {}
+    for rdn in subject:
+        oid_values[rdn.oid._name] = rdn.value
 
     keybox_parsed = (f"{certificate.subject}")
     keybox_string = re.search(r"2\.5\.4\.5=([0-9a-fA-F]+)", keybox_parsed) 
@@ -300,11 +303,19 @@ async def keybox_check_cli(keybox_path):
     else:
         print(f"Keybox SN : {Fore.YELLOW}Software or Invalid")
     print(f"Cert SN : {Fore.BLUE}{serial_number_string}")
+    keybox_title = oid_values.get('title', 'N/A')
+    if keybox_title != 'TEE':
+        print(f"Keybox Title : {Fore.BLUE}{keybox_title}")
+    if 'organizationName' in oid_values:
+        print(f"Keybox Organization: {Fore.BLUE}{oid_values['organizationName']}")
+    if 'commonName' in oid_values:
+        print(f"Keybox Name: {Fore.BLUE}{oid_values['commonName']}")
     print(f"Status : {overrall_status}")
     print(f"Keychain : {keychain_status}")
     print(f"Validity: {validity_status}")
     print(f"Root Cert : {cert_status}")
     print(f"Check Time : {Fore.BLUE}{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    return overrall_status
 
     # Im dying here
 def get_overrall_status(status, keychain_status, cert_status, google_status):
@@ -353,25 +364,45 @@ if __name__ == "__main__":
         metavar="FOLDER_PATH",
         help="Check keybox.xml files in bulk."
     )
+    parser.add_argument(
+        "-v", "--version",
+        action='version',
+        version=f'KeyboxChecker Version : {current_version}'
+    )
     
     args = parser.parse_args()
 
     if args.bulk:
         folder_path = args.bulk
+        keybox_statuses = {}
+        total_valid_keybox = 0
+        total_software_keybox = 0
+        total_invalid_keybox = 0
+
+        print("Checking keyboxs folder...")
         for filename in os.listdir(folder_path):
             if filename.endswith(".xml"):
                 file_path = os.path.join(folder_path, filename)
-                print("=====================================")
-                print(f"Processing: {file_path}")
-                asyncio.run(keybox_check_cli(file_path))
+                overrall_status = asyncio.run(keybox_check_cli(file_path))
+                keybox_statuses[file_path] = overrall_status
+                os.system('cls' if os.name == 'nt' else 'clear')
 
-    elif args.keybox_path: # If --bulk is not used, check single file
+                if overrall_status == f"{Fore.GREEN}Valid. (Google Hardware Attestation)":
+                    total_valid_keybox += 1
+                elif overrall_status == f"{Fore.YELLOW}Valid. (Software signed)":
+                    total_software_keybox += 1
+                elif overrall_status in [f"{Fore.RED}Invalid Keybox.", f"{Fore.RED}Invalid. (Key Compromised)", f"{Fore.RED}Invalid. (Software flaw)", f"{Fore.RED}Invalid. (CA Compromised)", f"{Fore.RED}Invalid. (Suspended)"]:
+                    total_invalid_keybox += 1
+
+        for keybox, overrall_status in keybox_statuses.items():
+            print(f"{keybox} : {overrall_status}")
+
+        print(f"\nValid Keyboxs : {total_valid_keybox}")
+        print(f"Software Keyboxs : {total_software_keybox}")
+        print(f"Invalid Keyboxs : {total_invalid_keybox}")
+
+    elif args.keybox_path:  # If --bulk is not used, check single file
         asyncio.run(keybox_check_cli(args.keybox_path))
     else:
-        print("Error: Please provide a folder full of keybox.xml files or a single keybox.xml file.")
-        sys.exit(1)
-    
-
-    if not args.keybox_path:
-        print("Error: Please provide the path to the keybox file.")
+        print("Error: Please provide a folder full of keybox.xml files or the path to the keybox file.")  # Modified error message
         sys.exit(1)
