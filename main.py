@@ -385,7 +385,7 @@ if __name__ == "__main__":
                 file_path = os.path.join(folder_path, filename)
                 overrall_status = asyncio.run(keybox_check_cli(file_path))
                 keybox_statuses[file_path] = overrall_status
-                os.system('cls' if os.name == 'nt' else 'clear')
+                # os.system('cls' if os.name == 'nt' else 'clear')
 
                 if overrall_status == f"{Fore.GREEN}Valid. (Google Hardware Attestation)":
                     total_valid_keybox += 1
