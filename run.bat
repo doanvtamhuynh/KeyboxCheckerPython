@@ -24,6 +24,13 @@ if %errorlevel% neq 0 (
     set /a missing_lib+=1
 )
 
+python -m pip show requests >nul 2>&1
+if %errorlevel% neq 0 (
+    echo Missing library requests. Installing...
+    python -m pip install requests
+    set /a missing_lib+=1
+)
+
 if %missing_lib% equ 0 (
     echo All required libraries are already installed.
 ) else (

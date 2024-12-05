@@ -28,6 +28,14 @@ if [ $? -ne 0 ]; then
     missing_lib=$((missing_lib + 1))
 fi
 
+requests
+python3 -m pip show requests > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "Missing library requests. Installing..."
+    python3 -m pip install requests
+    missing_lib=$((missing_lib + 1))
+fi
+
 if [ $missing_lib -eq 0 ]; then
     echo "All required libraries are already installed."
 else
