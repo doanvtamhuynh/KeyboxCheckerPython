@@ -315,6 +315,7 @@ async def keybox_check_cli(keybox_path):
     print(f"Validity: {validity_status}")
     print(f"Root Cert : {cert_status}")
     print(f"Check Time : {Fore.BLUE}{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("----------------------------------github.com/doanvtamhuynh----------------------------------")
     return overrall_status
 
     # Im dying here
